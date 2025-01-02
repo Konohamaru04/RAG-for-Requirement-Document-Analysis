@@ -298,6 +298,8 @@ RAG systems can significantly streamline processes in the IT services industry, 
 4. **Knowledge Retention**: Build a knowledge base by storing project-related documents and their processed outputs for future reference.
 5. **Automated Follow-Ups**: Identify gaps in client requirements and generate follow-up questions for clarification.
 
+
+### Visit [GitHub](https://github.com/Konohamaru04/RAG-for-Requirement-Document-Analysis) for codebase.
 ---
 
 ### **Challenges and How to Overcome Them**
