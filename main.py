@@ -8,6 +8,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 import logging
+import re
 import traceback
 
 # Configure logging
@@ -31,16 +32,16 @@ def ingest(file):
         chunks = text_splitter.split_documents(pages)
         logging.info(f"Split pages into {len(chunks)} chunks.")
 
-        logging.info(f"Load FastEmbedEmbeddings")
+        logging.info("Load FastEmbedEmbeddings")
         embedding = FastEmbedEmbeddings()
 
-        logging.info(f"Dump data in Chroma db STATUS: Start")
+        logging.info("Dump data in Chroma db STATUS: Start")
         try:
             Chroma.from_documents(documents=chunks, embedding=embedding, persist_directory="./sql_chroma_db")
             logging.info("Successfully persisted data to Chroma.")
         except Exception as e:
             logging.error(f"Error persisting data to Chroma: {e}")
-        logging.info(f"Dump data in Chroma db STATUS: Done")
+        logging.info("Dump data in Chroma db STATUS: Done")
         logging.info("Saved chunks to vector store.")
 
         return f"Processed {len(pages)} pages into {len(chunks)} chunks and saved to vector store."
@@ -67,7 +68,7 @@ def rag_chain():
         vector_store = Chroma(persist_directory="./sql_chroma_db", embedding_function=embedding)
         retriever = vector_store.as_retriever(
             search_type="mmr",
-            search_kwargs={"k": 20, "score_threshold": 0.15},
+            search_kwargs={"k": 40, "score_threshold": 0.15},
         )
         document_chain = create_stuff_documents_chain(model, prompt)
         logging.info("RAG chain successfully created.")
@@ -76,15 +77,36 @@ def rag_chain():
         logging.error(f"Error during RAG chain creation: {e}")
         raise
 
-# Define query function
+# Define query function with monitoring and guardrails
 def ask(query):
     try:
+        # Basic guardrails
+        def anonymize_query(query):
+            # Simple anonymization for emails
+            query = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', '[REDACTED]', query)
+            return query
+
+        def contains_restricted_language(query):
+            restricted_substrings = ["badword", "offensive"]
+            return any(substring in query.lower() for substring in restricted_substrings)
+
+        def contains_code_injection(query):
+            return bool(re.search(r'(SELECT|INSERT|DROP|DELETE|UPDATE|--|\;)', query, re.IGNORECASE))
+
+        # Apply guardrails
+        query = anonymize_query(query)
+        if contains_restricted_language(query):
+            raise ValueError("Query contains restricted language.")
+        if contains_code_injection(query):
+            raise ValueError("Potential code injection detected.")
+
         logging.info(f"Received query: {query}")
         chain = rag_chain()
         if not chain:
             raise RuntimeError("RAG chain creation failed.")
 
         result = chain.invoke({"input": query})
+
         answer = result.get("answer", "No answer available.")
         context = result.get("context", [])
 
@@ -129,7 +151,7 @@ def main():
 
                 query_button.click(query_interface, inputs=query_input, outputs=[query_output, source_output])
 
-        ui.launch()
+        ui.launch(share=True)
     except Exception as e:
         logging.error(f"Error during UI launch: {e}")
 

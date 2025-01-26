@@ -288,6 +288,107 @@ if __name__ == "__main__":
 ```
 ---
 
+## Security with Guardrails
+
+To ensure Responsible AI, security guardrails are implemented to filter bad queries and prevent misuse. Below are the applied techniques:
+
+### 1. **Anonymization**
+- **Objective**: Automatically remove personally identifiable information (PII) from user queries.
+
+**Code Example**:
+```python
+from langchain_guardrails import Anonymizer
+
+anonymizer = Anonymizer()
+query = "John Doe's email is john.doe@example.com"
+filtered_query = anonymizer.anonymize(query)
+print(f"Filtered Query: {filtered_query}")
+```
+
+### 2. **Restrict Substrings**
+- **Objective**: Prevent malicious queries containing restricted substrings like profanity or offensive terms.
+
+**Code Example**:
+```python
+restricted_substrings = ["badword", "offensiveterm"]
+query = "This is a badword test."
+if any(substring in query for substring in restricted_substrings):
+    raise ValueError("Query contains restricted content.")
+```
+
+### 3. **Restrict Language**
+- **Objective**: Block inappropriate or harmful language queries.
+
+**Code Example**:
+```python
+from langchain_guardrails import LanguageFilter
+
+language_filter = LanguageFilter(allowed_languages=["en"])
+query = "Este es un texto en español."
+if not language_filter.is_allowed(query):
+    raise ValueError("Language not allowed.")
+```
+
+### 4. **Restrict Code Injection**
+- **Objective**: Prevent injection attacks through malicious code in queries.
+
+**Code Example**:
+```python
+from langchain_guardrails import InjectionFilter
+
+injection_filter = InjectionFilter()
+query = "SELECT * FROM users;"
+if injection_filter.contains_injection(query):
+    raise ValueError("Potential code injection detected.")
+```
+
+---
+
+## Evaluation of Responses
+
+### Evaluation Aspects
+To ensure the RAG system delivers high-quality and responsible responses, the following evaluation criteria are applied:
+
+1. **Fairness**
+   - **Goal**: Ensure that the responses do not reflect unjust biases based on gender, race, or other attributes.
+   - **Evaluation Method**: Test queries are crafted to analyze how the model responds to diverse scenarios.
+
+   **Code Example**:
+   ```python
+   test_queries = [
+       "Provide maternity leave requirements.",
+       "Describe policies for paternity leave."
+   ]
+
+   for query in test_queries:
+       answer, sources = ask(query)
+       print(f"Query: {query}\nAnswer: {answer}\nSources: {sources}\n")
+   ```
+
+2. **No Unjust Bias**
+   - **Goal**: Avoid biases in retrieved content or generated responses.
+   - **Evaluation Method**: Regularly audit the vector database for biased documents and incorporate fairness tests in the RAG chain evaluation.
+
+3. **Relevance and Accuracy**
+   - **Goal**: Ensure the response is directly aligned with the query context.
+   - **Evaluation Method**: Precision and recall metrics are used for the retrieved documents, combined with manual checks for correctness.
+
+4. **Handling Ambiguity**
+   - **Goal**: Generate follow-up questions for incomplete or unclear queries.
+   - **Evaluation Method**: Test queries with incomplete context to evaluate if the system provides actionable follow-up questions.
+
+### Sample Evaluation
+- **Query**: "Explain the requirements for data privacy compliance."
+
+**Code Example**:
+```python
+query = "Explain the requirements for data privacy compliance."
+answer, sources = ask(query)
+print(f"Answer: {answer}\nSources: {sources}")
+```
+
+---
+
 ### **Applications of RAG in IT Services**
 
 RAG systems can significantly streamline processes in the IT services industry, especially for requirement gathering, analysis, and project initiation. Some of the key applications include:
@@ -324,6 +425,22 @@ Implementing a RAG system involves several challenges. Below are common issues a
 
 ---
 
+## Why RAG Was Chosen Over Fine-Tuning
+
+In this use case, Retrieval-Augmented Generation (RAG) was preferred over fine-tuning for several reasons:
+
+1. **Dynamic Updates**: RAG leverages an external vector database for retrieval, allowing the system to dynamically incorporate new information without requiring model retraining.
+
+2. **Cost Efficiency**: Fine-tuning large models like Llama3.2-Vision:11b can be resource-intensive, requiring significant computational power and time. RAG avoids this by using pre-trained models and focusing on retrieval.
+
+3. **Adaptability**: Fine-tuned models are often tailored to specific tasks and may underperform on out-of-scope queries. RAG, with its retrieval-based approach, is inherently more flexible and adaptable to a wider range of queries.
+
+4. **Domain Independence**: By separating the knowledge base (vector database) from the model, RAG allows the knowledge base to be domain-specific while keeping the model generic, thus enabling better scalability and reuse.
+
+5. **Faster Deployment**: RAG-based solutions can be deployed quickly by populating a vector store with embeddings, whereas fine-tuning requires additional cycles for data preparation, training, and evaluation.
+
+---
+
 ### **Future Enhancements and Business Benefits**
 
 #### **1. Multilingual Support**
@@ -337,6 +454,31 @@ Implementing a RAG system involves several challenges. Below are common issues a
 #### **3. Advanced Analytics**
 - **Enhancement**: Provide detailed analytics on requirement trends and gaps.
 - **Business Benefit**: Help stakeholders make data-driven decisions and plan projects effectively.
+
+---
+
+## Next Steps for Production Deployment
+
+1. **Scalable Infrastructure**
+   - Deploy the RAG system on cloud platforms with autoscaling capabilities to handle varying workloads.
+   - Use container orchestration tools like Kubernetes for efficient resource management.
+
+2. **Fine-Grained Access Control**
+   - Implement role-based access controls (RBAC) to ensure that only authorized users can perform specific actions, such as document ingestion or database updates.
+
+3. **CI/CD Pipeline**
+   - Establish continuous integration and deployment pipelines to streamline updates and monitor deployment health.
+
+4. **Comprehensive Testing**
+   - Perform rigorous load testing to ensure the system can handle high query volumes.
+   - Implement automated unit and integration tests for all pipeline components.
+
+5. **Periodic Model Updates**
+   - Regularly update the language model and embeddings to incorporate the latest advancements and domain-specific knowledge.
+
+6. **Compliance and Auditing**
+   - Ensure adherence to data protection regulations like GDPR and HIPAA.
+   - Maintain detailed audit logs for system activities to enhance transparency.
 
 ---
 
