@@ -53,15 +53,33 @@ def ingest(file):
 def rag_chain():
     try:
         logging.info("Creating RAG chain.")
-        model = ChatOllama(model="llama3.2-vision:11b")
+        model = ChatOllama(model="deepseek-r1:14b")
         prompt = PromptTemplate.from_template(
             """
             <s> [Instructions] You are a helpful and precise assistant. Use the provided context to answer the question clearly and accurately. 
             If the context does not contain enough information, respond with: "No context available for this question: {input}".
             Ensure your answer is well-structured, concise, and directly addresses the question. [/Instructions] </s>
-            [Question] {input} [/Question]
-            [Context] {context} [/Context]
-            [Answer]
+
+            ### Guidelines:
+            - If you don't know the answer, clearly state that.
+            - If uncertain, ask the user for clarification.
+            - Respond in the same language as the user's query.
+            - If the context is unreadable or of poor quality, inform the user and provide the best possible answer.  
+            - Do not cite if the <source_id> tag is not provided in the context.  
+            - Do not use XML tags in your response.
+            - Ensure citations are concise and directly related to the information provided.
+            - Always reply in markdown.
+
+            ### Output:
+            Provide a clear and direct response to the user's query, including inline citations in the format [source_id] only when the <source_id> tag is present in the context.
+
+            <context>
+            {context}
+            </context>
+
+            <user_query>
+            {input}
+            </user_query>
             """
         )
         embedding = FastEmbedEmbeddings()
@@ -108,6 +126,16 @@ def ask(query):
         result = chain.invoke({"input": query})
 
         answer = result.get("answer", "No answer available.")
+
+        # Extracting 'Think' section
+        think_match = re.search(r"<think>(.*?)</think>", answer, re.DOTALL)
+        think_section = think_match.group(1).strip() if think_match else "No Think Section Found"
+
+        # Extracting 'Rest of the content' section
+        rest_of_content = re.sub(r"<think>.*?</think>\s*", "", answer, flags=re.DOTALL).strip()
+
+
+        
         context = result.get("context", [])
 
         if not context:
@@ -117,7 +145,7 @@ def ask(query):
             sources = [doc.metadata.get("source", "Unknown source") for doc in context]
 
         logging.info("Query successfully processed.")
-        return answer, sources
+        return rest_of_content, sources, think_section
     except Exception as e:
         logging.error(f"Error in ask function: {e}")
         return "An error occurred while processing your query.", ["No sources available."]
@@ -126,8 +154,8 @@ def ask(query):
 def query_interface(query):
     try:
         logging.info("Processing user query through interface.")
-        answer, sources = ask(query)
-        return answer, sources
+        answer, sources, think_section = ask(query)
+        return answer, sources, think_section
     except Exception as e:
         logging.error(f"Error in query interface: {e}")
         return "An error occurred while processing your query.", ["No sources available."]
@@ -146,10 +174,10 @@ def main():
             with gr.Tab("Ask Question"):
                 query_input = gr.Textbox(label="Enter your question:")
                 query_button = gr.Button("Ask")
-                query_output = gr.Markdown(label="Answer")
+                query_output_text = gr.Textbox(label="Thinking")
+                query_output = gr.Markdown(label="Answer", show_copy_button=True, container=True)
                 source_output = gr.Textbox(label="Sources")
-
-                query_button.click(query_interface, inputs=query_input, outputs=[query_output, source_output])
+                query_button.click(query_interface, inputs=query_input, outputs=[query_output, source_output, query_output_text])
 
         ui.launch(share=True)
     except Exception as e:
