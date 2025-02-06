@@ -18,7 +18,7 @@ Before implementing the RAG system, it is crucial to set up the environment prop
 
 ### **1. Setting up Ollama with Docker**
 
-Ollama is used to host the Llama3.2-Vision:11b model, enabling natural language processing capabilities essential for this RAG tool. Below are the steps to set up Ollama with Docker:
+Ollama is used to host the deepseek-r1:14b model, enabling natural language processing capabilities essential for this RAG tool. Below are the steps to set up Ollama with Docker:
 
 #### **Step 1: Install Docker**
 
@@ -58,9 +58,9 @@ Ollama is used to host the Llama3.2-Vision:11b model, enabling natural language 
   ```
   You should see `ollama-container` listed in the output.
 
-### **2. Downloading the Llama3.2-Vision:11b Model**
+### **2. Downloading the deepseek-r1:14b Model**
 
-The Llama3.2-Vision:11b model must be downloaded within the Docker container to enable advanced natural language processing. Follow these steps:
+The deepseek-r1:14b model must be downloaded within the Docker container to enable advanced natural language processing. Follow these steps:
 
 1. Access the running Ollama container:
    ```bash
@@ -68,9 +68,9 @@ The Llama3.2-Vision:11b model must be downloaded within the Docker container to 
    ```
 2. Use the Ollama CLI to download the required model:
    ```bash
-   ollama pull llama3.2-vision:11b
+   ollama pull deepseek-r1:14b
    ```
-   This command fetches the Llama3.2-Vision:11b model and prepares it for use.
+   This command fetches the deepseek-r1:14b model and prepares it for use.
 3. Exit the container once the model is successfully downloaded:
    ```bash
    exit
@@ -110,7 +110,7 @@ Python libraries play a crucial role in the implementation of this RAG system. I
 - **LangChain**: Powers the chaining of document ingestion, embedding, and retrieval processes to enable seamless execution.
 - **Chroma**: Acts as the vector database for storing and managing embeddings.
 - **PyPDFLoader**: Handles the extraction and splitting of content from multi-page PDF files into smaller, manageable chunks.
-- **ChatOllama**: Integrates the Llama3.2-Vision:11b model, offering advanced natural language processing capabilities.
+- **ChatOllama**: Integrates the deepseek-r1:14b model, offering advanced natural language processing capabilities.
 - **FastEmbedEmbeddings**: Generates high-quality embeddings for document indexing and retrieval.
 
 ---
@@ -171,7 +171,7 @@ def ingest(file):
 
 ### **RAG Chain Creation**
 
-**Description**: Configures the Retrieval-Augmented Generation (RAG) chain using the Llama3.2-Vision:11b model to enable natural language querying and precise response generation.
+**Description**: Configures the Retrieval-Augmented Generation (RAG) chain using the deepseek-r1:14b model to enable natural language querying and precise response generation.
 
 ```python
 from langchain_ollama import ChatOllama
@@ -183,7 +183,7 @@ from langchain.chains.retrieval import create_retrieval_chain
 def rag_chain():
     try:
         logging.info("Creating RAG chain.")
-        model = ChatOllama(model="llama3.2-vision:11b")
+        model = ChatOllama(model="deepseek-r1:14b")
         prompt = PromptTemplate.from_template(
             """
             <s> [Instructions] You are a helpful and precise assistant. Use the provided context to answer the question clearly and accurately. 
@@ -431,7 +431,7 @@ In this use case, Retrieval-Augmented Generation (RAG) was preferred over fine-t
 
 1. **Dynamic Updates**: RAG leverages an external vector database for retrieval, allowing the system to dynamically incorporate new information without requiring model retraining.
 
-2. **Cost Efficiency**: Fine-tuning large models like Llama3.2-Vision:11b can be resource-intensive, requiring significant computational power and time. RAG avoids this by using pre-trained models and focusing on retrieval.
+2. **Cost Efficiency**: Fine-tuning large models like deepseek-r1:14b can be resource-intensive, requiring significant computational power and time. RAG avoids this by using pre-trained models and focusing on retrieval.
 
 3. **Adaptability**: Fine-tuned models are often tailored to specific tasks and may underperform on out-of-scope queries. RAG, with its retrieval-based approach, is inherently more flexible and adaptable to a wider range of queries.
 
@@ -480,7 +480,7 @@ In this use case, Retrieval-Augmented Generation (RAG) was preferred over fine-t
    - Use **Docker** to containerize the Llama3.2-Vision model and its dependencies.
    - Example Docker command:
      ```bash
-     docker run --gpus all -d --name llama-model -p 8000:8000 llama3.2-vision:11b
+     docker run --gpus all -d --name llama-model -p 8000:8000 deepseek-r1:14b
      ```
 
 ### 4. **Access Control**
