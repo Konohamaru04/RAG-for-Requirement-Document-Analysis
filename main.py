@@ -86,7 +86,7 @@ def rag_chain():
         vector_store = Chroma(persist_directory="./sql_chroma_db", embedding_function=embedding)
         retriever = vector_store.as_retriever(
             search_type="mmr",
-            search_kwargs={"k": 40, "score_threshold": 0.15},
+            search_kwargs={"k": 20, "score_threshold": 0.15},
         )
         document_chain = create_stuff_documents_chain(model, prompt)
         logging.info("RAG chain successfully created.")
